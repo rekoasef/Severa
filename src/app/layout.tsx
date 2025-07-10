@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter, Poppins } from 'next/font/google';
 import './globals.css';
-// Ya no importamos Sidebar aquí
-
+import { Toaster } from 'react-hot-toast'; // Importa Toaster
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const poppins = Poppins({
@@ -23,8 +22,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className={`${inter.variable} ${poppins.variable}`}>
-        {/* Simplemente renderizamos los hijos, sin layout adicional */}
+      <body className={`${inter.variable} ${poppins.variable} bg-background`}>
+        {/* Componente para mostrar notificaciones en toda la app */}
+        <Toaster position="bottom-center" />
         {children}
       </body>
     </html>

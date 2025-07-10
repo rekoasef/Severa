@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase-client';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast'; // Importamos toast
 
 export default function SignUpPage() {
   const [email, setEmail] = useState('');
@@ -16,23 +17,20 @@ export default function SignUpPage() {
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // 1. Verificamos que las contraseñas coincidan
     if (password !== confirmPassword) {
-      alert('Las contraseñas no coinciden.');
+      toast.error('Las contraseñas no coinciden.');
       return;
     }
 
-    // 2. Llamamos a la función de registro de Supabase
     const { data, error } = await supabase.auth.signUp({
       email: email,
       password: password,
     });
 
     if (error) {
-      alert('Error al registrarse: ' + error.message);
+      toast.error('Error al registrarse: ' + error.message);
     } else {
-      // 3. Mostramos un mensaje de éxito y redirigimos
-      alert('¡Registro exitoso! Por favor, inicia sesión.');
+      toast.success('¡Registro exitoso! Por favor, inicia sesión.');
       router.push('/login');
     }
   };

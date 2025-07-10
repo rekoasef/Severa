@@ -1,16 +1,34 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { LayoutDashboard, ShoppingCart, History, LogOut } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, History, LogOut, LoaderCircle, Archive } from 'lucide-react';
 import { supabase } from '@/lib/supabase-client';
 import { useRouter } from 'next/navigation';
+import { deleteDb } from '@/lib/db'; // Importamos la nueva función
 
 const Sidebar = () => {
   const router = useRouter();
+  const [syncStatus, setSyncStatus] = useState('idle');
+
+  useEffect(() => {
+    const handleSyncStatus = (event: Event) => {
+      const customEvent = event as CustomEvent<string>;
+      setSyncStatus(customEvent.detail);
+    };
+    window.addEventListener('sync-status', handleSyncStatus);
+    return () => {
+      window.removeEventListener('sync-status', handleSyncStatus);
+    };
+  }, []);
 
   const handleLogout = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
     await supabase.auth.signOut();
+    if (session) {
+      await deleteDb(session.user.id);
+    }
     router.push('/login');
   };
 
@@ -33,10 +51,19 @@ const Sidebar = () => {
             <History size={20} />
             <span>Historial</span>
           </Link>
+          <Link href="/alacena" className="flex items-center gap-3 p-2 rounded-lg hover:bg-background font-body text-text">
+            <Archive size={20} />
+            <span>Alacena</span>
+          </Link>
         </nav>
       </div>
-
-      <div>
+      <div className="flex flex-col gap-2">
+        {syncStatus === 'syncing' && (
+          <div className="flex items-center justify-center gap-2 text-sm text-primary p-2 bg-primary/10 rounded-lg">
+            <LoaderCircle size={16} className="animate-spin" />
+            <span>Sincronizando...</span>
+          </div>
+        )}
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-background font-body text-text"

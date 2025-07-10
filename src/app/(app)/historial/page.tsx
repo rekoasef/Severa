@@ -2,36 +2,31 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase-client';
+import { getDb } from '@/lib/db';
+import { useLiveQuery } from 'dexie-react-hooks';
 import PurchaseCard from '@/components/PurchaseCard';
-import { Database } from '@/types/database.types';
-
-// Definimos el tipo para una compra que viene de Supabase
-type Purchase = Database['public']['Tables']['purchases']['Row'];
+import { AlertCircle } from 'lucide-react';
+import Dexie from 'dexie';
 
 export default function HistoryPage() {
-  const [purchases, setPurchases] = useState<Purchase[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [db, setDb] = useState<Dexie | null>(null);
 
   useEffect(() => {
-    const fetchPurchases = async () => {
-      setLoading(true);
-      // Hacemos la consulta a la tabla 'purchases' de Supabase
-      const { data, error } = await supabase
-        .from('purchases')
-        .select('*') // Seleccionamos todas las columnas
-        .order('date', { ascending: false }); // Ordenamos por fecha descendente
-
-      if (error) {
-        console.error('Error fetching purchases:', error);
-        alert('No se pudo cargar el historial.');
-      } else {
-        setPurchases(data);
+    const initDb = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setDb(getDb(user.id));
       }
-      setLoading(false);
     };
+    initDb();
+  }, []);
 
-    fetchPurchases();
-  }, []); // El array vacío asegura que se ejecute solo una vez, al montar el componente
+  const purchases = useLiveQuery(
+    () => db?.table('purchases').orderBy('date').reverse().toArray(),
+    [db]
+  );
+
+  if (!db) return <div className="p-8">Cargando...</div>;
 
   return (
     <div className="flex flex-col gap-8">
@@ -40,22 +35,23 @@ export default function HistoryPage() {
           Historial de Compras
         </h1>
         <p className="font-body text-text/70 mt-1">
-          Aquí puedes ver todas tus compras guardadas en la nube.
+          Mostrando datos locales. Se sincronizará con la nube cuando haya conexión.
         </p>
       </header>
-
+      <div className="bg-primary/10 border border-primary/20 text-primary p-3 rounded-lg flex items-center gap-3 text-sm">
+        <AlertCircle size={20} />
+        <span>Este ícono indica que la compra aún no se ha sincronizado con la nube. Desaparecerá automáticamente al conectar a internet.</span>
+      </div>
       <div className="flex flex-col gap-4">
-        {loading && (
+        {!purchases ? (
           <p className="font-body text-text/70">Cargando historial...</p>
-        )}
-        
-        {!loading && purchases.length === 0 && (
+        ) : purchases.length === 0 ? (
           <p className="font-body text-text/70">No tienes ninguna compra registrada todavía.</p>
+        ) : (
+          purchases.map((purchase: any) => (
+            <PurchaseCard key={purchase.id} purchase={purchase} />
+          ))
         )}
-
-        {!loading && purchases.map((purchase) => (
-          <PurchaseCard key={purchase.id} purchase={purchase} />
-        ))}
       </div>
     </div>
   );

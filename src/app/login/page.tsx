@@ -4,15 +4,15 @@ import { useState } from 'react';
 import Button from '@/components/Button';
 import Image from 'next/image';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase-client'; // 1. Importamos nuestro cliente de Supabase
-import { useRouter } from 'next/navigation'; // 2. Importamos el router para redirigir
+import { supabase } from '@/lib/supabase-client';
+import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast'; // Importamos toast
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const router = useRouter(); // Inicializamos el router
+  const router = useRouter();
 
-  // 3. Convertimos la función en async y añadimos la lógica
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -22,11 +22,10 @@ export default function LoginPage() {
     });
 
     if (error) {
-      alert('Error al iniciar sesión: ' + error.message);
+      toast.error('Error al iniciar sesión: ' + error.message);
     } else {
-      // Si el inicio de sesión es exitoso, data.user no será nulo
-      alert('¡Inicio de sesión exitoso!');
-      router.push('/'); // Redirigimos al Panel de Control
+      toast.success('¡Inicio de sesión exitoso!');
+      router.push('/');
     }
   };
 
